@@ -113,6 +113,24 @@ $(() => {
 
         top.close()
     }
+  
+    function ExperimentalCode2() {
+        Control.navMgr.getMenuPanel().getTableOfContents().courseMapItems.forEach((lesson) => {
+            lesson.entries.forEach((entry) => {
+                //if (entry.isTestable)
+                //    console.log("Note => This is a test") // do stuffs here for the test
+
+                entry.failed = false
+                entry.isCompleted = true
+                entry.isDisabled = false
+                entry.isVisited = true
+                entry.visible = true
+                entry.visitStatus = 4
+            })
+        })
+
+        Navigate()
+    }
 
     async function RunExploit() {
         EnableAutoPlay()
@@ -128,10 +146,11 @@ $(() => {
     document.addEventListener('keydown', e => {
         if (e.code === 'Digit1') RunExploit()
         if (e.code === 'Digit2') ExperimentalCode()
+        if (e.code === 'Digit3') ExperimentalCode2()
         if (e.code === 'Tab') Navigate()
     })
 
     document.addEventListener('click', () => SetScore())
     document.addEventListener('dblclick', () => RunExploit())
-    document.addEventListener('click', (e) => e.detail === 3 ? ExperimentalCode() : SetScore())
+    document.addEventListener('click', (e) => e.detail === 3 ? ExperimentalCode2() : SetScore())
 })
