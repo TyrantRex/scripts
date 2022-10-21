@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Skillport Cheats
 // @namespace    http://example.com/tyrantrex/projects
-// @version      5.0
-// @description  Final. Updated 02/2022
+// @version      6.0
+// @description  Final. Updated 10/2022
 // @author       TyrantRex
 // @match        *://library.skillport.com/*
 // @include      *://library.skillport.com/*
@@ -56,10 +56,6 @@ $(() => {
 
     const EnableAutoPlay = () => Control.navMgr.getMenuPanel().getSettingsPanel().autoPlayBtn.setSelected(true)
 
-    const ChangeStartTime = (unixTimeStamp = Core.context.course.resultsMgr.clock) => {
-        unixTimeStamp.startTime = unixTimeStamp.lastTime - (RandomNumber(20, 25) * 60 * 1000)
-    }
-
     const JumpToPage = (locID) => Control.navMgr.jumpToTopicAsync(locID, null)
 
     const PrevPage = () => Control.navMgr.prevTopicAsync(true, null, null)
@@ -69,88 +65,52 @@ $(() => {
     const SkipTest = () => Control.navMgr.skipTestAsync(Control.NavigationMgr.NEXT, null)
 
     const Navigate = () => {
+        TestSummaryPage() ? SkipTest() : NextPage()
+
         SetScore()
-        TestSummaryPage ? NextPage() : (!TestEnabled ? PrevPage() : SkipTest())
     }
 
-    const TestSummaryPage = () => Control.navMgr.currentpage.isTestSummaryPage()
+    const TestSummaryPage = () => {
+        if (Control.navMgr.currentpage.id == "testSummaryPage") return true
+
+        return false
+    }
 
     const TestEnabled = () => Course.CourseObject.prototype.isCourseTestEnabled()
 
     const SetScore = (topic = null, minScore = 80) => {
-        Core.context.course.getResultsMgr().getMasterBucket().duration = RandomNumber(120, 150) * 10
+        Core.context.course.lessons.forEach((lesson) => {
+            lesson.topics.forEach((topic) => {
+                let data = Core.context.getResultsMgr().getTopicStatusItem(topic.locID.getLocatorIDNoVersion())
 
-        Core.context.getResultsMgr().getMasterBucket().getTopicStatusItems().elements().data.forEach((topic) => {
-            topic.best = topic.last = topic.pre = RandomNumber(minScore, 100)
-            topic.visitStatus = Core.GenericConstants.C
-            topic.masteryStatus = Core.GenericConstants.M
-            topic.firstAttemptIsPreassess = true
-        })
-
-        Core.context.course.getResultsMgr().getMasterBucket().updateAllLessonScores()
-        Core.context.course.getResultsMgr().getMasterBucket().updateAllLessonStatus()
-    }
-
-    async function ExperimentalCode() {
-        EnableAutoPlay()
-
-        ChangeStartTime()
-
-        while (!Control.RiaContext.getInstance().isCourseComplete) {
-            Core.RiaProperties.getInstance().put("USER_VIDEO_ENABLED", false);
-
-            Core.context.course.lessons.forEach((lesson) => {
-                lesson.topics.forEach((topic) => {
-                    topic.resultsMgr.getMasterBucket().getTopicItems().data.forEach((item) => {
-                        JumpToPage(topic.locID)
-                        SetScore(item, 100)
-                    })
-                })
+                data.pre = data.best = data.last = RandomNumber(minScore, 100)
+                data.visitStatus = Core.GenericConstants.C
+                data.masteryStatus = Core.GenericConstants.M
+                data.firstAttemptIsPreassess = true
             })
 
-            await new Promise(resolve => setTimeout(() => resolve(), 10))
-        }
-
-        top.close()
-    }
-  
-    function ExperimentalCode2() {
-        Control.navMgr.getMenuPanel().getTableOfContents().courseMapItems.forEach((lesson) => {
-            lesson.entries.forEach((entry) => {
-                //if (entry.isTestable)
-                //    console.log("Note => This is a test") // do stuffs here for the test
-
-                entry.failed = false
-                entry.isCompleted = true
-                entry.isDisabled = false
-                entry.isVisited = true
-                entry.visible = true
-                entry.visitStatus = 4
-            })
+            Core.context.updateCompletionStatus()
         })
-
-        Navigate()
     }
 
     async function RunExploit() {
         EnableAutoPlay()
 
-        ChangeStartTime()
+        //ChangeStartTime()
 
         for (let i = 0; i < 150; i++) {
-            Control.RiaContext.getInstance().isCourseComplete ? top.close() : Navigate()
+            //Control.RiaContext.getInstance().isCourseComplete ? top.close() : Navigate()
+
+            Course.CourseMapView.prototype.getCourseScore() >= "80%" ? top.close() : Navigate()
             await new Promise(resolve => setTimeout(() => resolve(), 400))
         }
     }
 
     document.addEventListener('keydown', e => {
         if (e.code === 'Digit1') RunExploit()
-        if (e.code === 'Digit2') ExperimentalCode()
-        if (e.code === 'Digit3') ExperimentalCode2()
         if (e.code === 'Tab') Navigate()
     })
 
     document.addEventListener('click', () => SetScore())
     document.addEventListener('dblclick', () => RunExploit())
-    document.addEventListener('click', (e) => e.detail === 3 ? ExperimentalCode2() : SetScore())
 })
